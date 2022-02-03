@@ -5,13 +5,8 @@ from config import *
 import json
 import backend
 
-#from telebot import apihelper
-#apihelper.proxy = {
-#    'https': 'socks5h://127.127.127.127:12345'
-#}
 
 bot = telebot.TeleBot(token)
-
 
 
 @bot.message_handler(commands=['start'])
@@ -47,6 +42,7 @@ def step1_filling_1(message): #step1
 
     elif (message.text != 'Готово') and (message.text != 'Software Development' or message.text != '✅ Software Development') and ((message.text in jobs) or (message.text in jobs_checked)):
         data = backend.get_sphere(message.from_user.username)
+        #print(data)
         result = list(data)
         st = ''
         for j in range(len(jobs)):
@@ -55,6 +51,7 @@ def step1_filling_1(message): #step1
                     result[j] = '1'
                 for i in range(len(result)):
                     st += result[i]
+                #print(st)
                 backend.update_sphere(message.from_user.username, st)
                 bot.send_message(message.chat.id, 'Добавлено', reply_markup=choose_job(message))
 
@@ -64,6 +61,7 @@ def step1_filling_1(message): #step1
 
                 for i in range(len(result)):
                     st += result[i]
+                #print(st)
                 backend.update_sphere(message.from_user.username, st)
                 bot.send_message(message.chat.id, 'Убрано', reply_markup=choose_job(message))
 
@@ -124,7 +122,7 @@ def step5_exp_0(message): #step_7
 
 def step5_exp_1(message): #step_8
     level = message.text
-    if level not in ["Без опыта", "Junior", "Middle", "Senior", "Teamlead"]:
+    if level not in ["No experience", "Junior", "Middle", "Senior", "Teamlead"]:
         bot.register_next_step_handler(message, step5_exp_1)
     else:
         if backend.get_status(message.from_user.username) == '0':
@@ -144,7 +142,7 @@ def step3_format_0(message): #step_format1
 
 def step3_format_1(message): #step_format2
     format = message.text
-    if format not in ["Офис", "Дистанционно","Гибрид"]:
+    if format not in ["Office", "Remote","Hybrid"]:
         bot.register_next_step_handler(message, step3_format_1)
     else:
         backend.update_format(message.from_user.username, format)
@@ -158,43 +156,7 @@ def step3_format_1(message): #step_format2
             bot.send_message(message.chat.id, 'Успешно!', reply_markup=update_profile(message))
             bot.register_next_step_handler(message, update)
 
-"""
-def step2_city_0(message): #step_4
-    bot.send_message(message.chat.id, 'Выберите город, где хотите работать', reply_markup=city())
-    bot.register_next_step_handler(message, step2_city_1)
 
-
-def step2_city_1(message): #step_5
-    city = message.text
-    if city not in ["Москва", "Санкт-Петербург", "Другое"]:
-        bot.register_next_step_handler(message, step_5)
-    else:
-        backend.update_city(message.from_user.username, city)
-        if backend.get_status(message.from_user.username) == '0':
-            step3_format_0(message)
-        elif backend.get_status(message.from_user.username) == '1':
-            bot.send_message(message.chat.id, 'Успешно', reply_markup=update_profile(message))
-            bot.register_next_step_handler(message, update)
-"""
-
-"""
-def step4_salary_0(message): #step_salary1
-    bot.send_message(message.chat.id, 'Введите желаемую зп', reply_markup=salary())
-    bot.register_next_step_handler(message, step4_salary_1)
-
-
-def step4_salary_1(message): #step_salary2
-    net = message.text
-    if net not in ["ДО 100 тыс. руб.", "ОТ 100 тыс. руб.", "ОТ 200 тыс. руб.", "ОТ 300 тыс. руб."]:
-        bot.register_next_step_handler(message, step4_salary_1)
-    else:
-        backend.update_salary(message.from_user.username, net)
-        if backend.get_status(message.from_user.username) == '0':
-            step5_exp_0(message)
-        else:
-            bot.send_message(message.chat.id, 'Успешно', reply_markup=update_profile(message))
-            bot.register_next_step_handler(message, update)
-"""
 
 
 # Menu
@@ -247,16 +209,6 @@ def menu(message):
         bot.send_message(message.chat.id, "Собрали для вас подборку материалов, рекомендаций и источников, которые могут быть полезны при выборе работы в IT:", parse_mode="Markdown", reply_markup=markup)
         bot.register_next_step_handler(message, menu)
 
-    elif message.text == "stop":
-        if message.from_user.username == "nymaxxx":
-            bot.send_message(message.chat.id, "Отключаю!")
-            for i in backend.get_chats():
-                bot.send_message(i, "Бот сейчас выключится, пожалуйста, при следующем использовании сначала введите команду */start*!", parse_mode="Markdown")
-            bot.stop_polling()
-
-        else:
-            bot.send_message(message.chat.id, "Ты чего удумал?")
-            bot.register_next_step_handler(message, menu)
 
     else:
         bot.register_next_step_handler(message, menu)
@@ -274,39 +226,6 @@ def otkliki(message):
         bot.register_next_step_handler(message, menu)
     else:
         bot.register_next_step_handler(message, otkliki)
-
-
-def otkliki_delete(message):
-    ls = backend.get_ids(message.from_user.username)
-    l = len(ls)
-
-    if str(message.text).isdigit():
-        num = int(message.text)
-
-        if num < 1 or num > l:
-            bot.send_message(message.chat.id, "Вы ввели неправильный номер!", reply_markup=otkliki_markup())
-            bot.register_next_step_handler(message, otkliki_delete)
-
-        else:
-            num = num - 1
-            id = ls[num]
-            backend.delete_vac(message.from_user.username, id)
-            vcs = backend.get_vacancies(message.from_user.username, 0)
-            if vcs != None:
-                bot.send_message(message.chat.id, "Вы успешно удалили отклик!\nВаши отклики:")
-                bot.send_message(message.chat.id, vcs, parse_mode="Markdown", reply_markup=otkliki_markup())
-                bot.register_next_step_handler(message, otkliki)
-            else:
-                bot.send_message(message.chat.id, "У вас не осталось откликов :(\nВозвращаюсь в меню!", reply_markup=menu_keyboard())
-                bot.register_next_step_handler(message, menu)
-    else:
-        if message.text == "Назад":
-            vcs = backend.get_vacancies(message.from_user.username, 0)
-            bot.send_message(message.chat.id, "Ваши отклики:")
-            bot.send_message(message.chat.id, vcs, parse_mode="Markdown", reply_markup=otkliki_markup())
-            bot.register_next_step_handler(message, otkliki)
-        else:
-            bot.register_next_step_handler(message, otkliki_delete)
 
 
 
@@ -342,7 +261,6 @@ def update(message):
 #Показать вакансии для меня
 def search_for_me_0(message):
     if message.text == 'Посмотреть!':
-        backend.create_log(message.from_user.username)
         search_for_me_1(message, 0)
     else:
         bot.register_next_step_handler(message, search_for_me_0)
@@ -360,7 +278,6 @@ def search_for_me_1(message, i, flag = 0):
         bot.register_next_step_handler(message, menu)
 
     elif len(rows) == 1 and (message.text in ["Откликнуться", "Назад", "Вперед", "Меню", "Посмотреть!"]):
-        #print("Условие нужное!")
         if flag == 0:
             text = backend.card(rows[i])
             flag += 1
@@ -399,8 +316,7 @@ def search_for_me_1(message, i, flag = 0):
     elif message.text not in ["Откликнуться", "Назад", "Вперед", "Меню", "Посмотреть!"]:
         bot.register_next_step_handler(message, search_for_me_1, i)
 
-    elif (0 <= i <= len(rows)) and (len(rows) > 1): # ошибка все время вылетает здесь
-        #print("Часть 1")
+    elif (0 <= i <= len(rows)) and (len(rows) > 1):
         text = backend.card(rows[i])
         bot.send_message(message.chat.id, text, reply_markup=vac(), parse_mode="Markdown")
         bot.register_next_step_handler(message, search_for_me_1, i)
@@ -408,9 +324,6 @@ def search_for_me_1(message, i, flag = 0):
     else:
         print("Часть 2")
         bot.register_next_step_handler(message, search_for_me_1, i)
-        #text = backend.card(rows[i])
-        #bot.send_message(message.chat.id, text, reply_markup=vac(), parse_mode="Markdown")
-        #bot.register_next_step_handler(message, search_for_me_1, i)
 
 
 
@@ -419,7 +332,6 @@ def search_for_me_1(message, i, flag = 0):
 #Посмотреть все вакансии
 def search_vac_0(message):
    if message.text == 'Посмотреть!':
-        backend.create_log(message.from_user.username)
         search_vac_1(message, 0)
    else:
        bot.register_next_step_handler(message, search_vac_0)
@@ -475,14 +387,7 @@ def search_vac_1(message, i):
 
 # Заглушка
 def echo(message):
-    #bot.register_next_step_handler(call.message, menu)
     pass
-
-#@bot.callback_query_handler(func=lambda call: call.data == "click1")
-#def handle1(call):
-#    bot.register_next_step_handler(call.message, menu)
-#    bot.answer_callback_query(call.id)
-
 
 
 @bot.callback_query_handler(func=lambda call: call.data.split('.')[0] == "click2")
@@ -511,8 +416,6 @@ def update_profile(message):
         sphere_count += int(result1[i])
 
     level = backend.get_level(message.from_user.username)
-    location = backend.get_location(message.from_user.username)
-    net = backend.get_salary(message.from_user.username)
     format = backend.get_format(message.from_user.username)
 
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -657,39 +560,22 @@ def choose_soft(message):
 
 def otkliki_markup():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    btn1 = types.KeyboardButton('Удалить отклик')
-    btn2 = types.KeyboardButton('Назад')
-    markup.add(btn1).add(btn2)
+    btn1 = types.KeyboardButton('Назад')
+    markup.add(btn1)
     return markup
 
-def salary():
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True) #, one_time_keyboard=True)
-    btn1 = types.KeyboardButton('ДО 100 тыс. руб.')
-    btn2 = types.KeyboardButton('ОТ 100 тыс. руб.')
-    btn3 = types.KeyboardButton('ОТ 200 тыс. руб.')
-    btn4 = types.KeyboardButton('ОТ 300 тыс. руб.')
-    markup.add(btn1).add(btn2).add(btn3).add(btn4)
-    return markup
-
-def city():
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    btn1 = types.KeyboardButton('Москва')
-    btn2 = types.KeyboardButton('Санкт-Петербург')
-    btn3 = types.KeyboardButton('Другое')
-    markup.add(btn1).add(btn2).add(btn3)
-    return markup
 
 def format():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    btn1 = types.KeyboardButton('Офис')
-    btn2 = types.KeyboardButton('Дистанционно')
-    btn3 = types.KeyboardButton('Гибрид')
+    btn1 = types.KeyboardButton('Office')
+    btn2 = types.KeyboardButton('Remote')
+    btn3 = types.KeyboardButton('Hybrid')
     markup.add(btn1).add(btn2).add(btn3)
     return markup
 
 def level():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    btn1 = types.KeyboardButton('Без опыта')
+    btn1 = types.KeyboardButton('No experience')
     btn2 = types.KeyboardButton('Junior')
     btn3 = types.KeyboardButton('Middle')
     btn4 = types.KeyboardButton('Senior')
@@ -720,8 +606,6 @@ def cancel():
     return markup
 
 
-
-
 @bot.message_handler(content_types=['audio', 'sticker', 'video', 'voice', 'location', 'contact'])
 def echo(message):
     pass
@@ -729,5 +613,4 @@ def echo(message):
 
 
 
-#bot.polling(none_stop=True)
 bot.infinity_polling()
